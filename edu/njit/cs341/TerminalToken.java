@@ -3,7 +3,10 @@ package edu.njit.cs341;
 /**
  * Author: Ravi Varadarajan
  * Date created: 3/27/2024
+ *
  */
+import edu.njit.cs341.TerminalToken;
+import edu.njit.cs341.StackToken;
 public class TerminalToken extends StackToken
 {
 

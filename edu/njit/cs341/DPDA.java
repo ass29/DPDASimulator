@@ -2,6 +2,10 @@ package edu.njit.cs341;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import edu.njit.cs341.TerminalToken;
+import edu.njit.cs341.StackToken;
+import edu.njit.cs341.InvalidSymbolException;
+import edu.njit.cs341.InvalidStateException;
 
 /**
  * The author does not consent for this document to be shared or widely distributed in

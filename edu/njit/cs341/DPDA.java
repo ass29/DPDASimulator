@@ -318,7 +318,6 @@ public class DPDA {
         return null;
     }
 
-
     // create a copy of stack
     private List<StackToken> copyStack(Stack<StackToken> stack) {
         List<StackToken> stackTop = new ArrayList<>();
@@ -334,37 +333,37 @@ public class DPDA {
         Stack<StackToken> stack = new Stack<>();
         int i = 0;
         int currState = startState;
-        Transition transition =  null;
-        List<Configuration> configurations = new ArrayList<> ();
+        Transition transition = null;
+        List<Configuration> configurations = new ArrayList<>();
         TerminalToken inputToken = null;
-        for (; ;) {
-            // check for a transition with epsilon stack/ epsilon input transition
+        for (;;) {
+            // Check for a transition with epsilon stack/epsilon input transition
             inputToken = TerminalToken.EPSILON;
             transition = match(currState, inputToken, stack, true);
             if (transition == null) {
-                // check for a transition with epsilon input symbol but match stack top
-                /**
-                 * TODO
-                 */
+                // Check for a transition with epsilon input symbol but match stack top
+                transition = match(currState, inputToken, stack, false);
+                if (transition == null) {
+                    // If i >= input.size(), break out of the loop
+                    if (i >= input.size()) {
+                        break;
+                    }
+                    // Check for a transition matching input (get inputToken first from position i of input) and epsilon stack
+                    inputToken = input.get(i);
+                    transition = match(currState, inputToken, stack, true);
+                }
             }
+            // Check for a transition matching input (same input in position i) and stack top
             if (transition == null) {
-                // if i >= input.size(), break out of the loop
-                // check for a transition matching input (get inputToken first from position i of input)
-                // and epsilon stack
-                /**
-                 * To DO
-                 */
+                inputToken = input.get(i);
+                transition = match(currState, inputToken, stack, false);
             }
+            // If no transitions match, PDA is stuck, break out of the loop
             if (transition == null) {
-                // check for a transition matching input (same input in position i) and stack top
-
-            }
-            if (transition == null) {
-                // no transitions match, PDA is stuck, break out of the loop
                 break;
             }
-            List<TerminalToken> sl = input.subList(i,input.size());
-            configurations.add(new Configuration(currState, sl,copyStack(stack), transition));
+            List<TerminalToken> sl = input.subList(i, input.size());
+            configurations.add(new Configuration(currState, sl, copyStack(stack), transition));
             if (inputToken != TerminalToken.EPSILON) {
                 i++;
             }
@@ -372,10 +371,11 @@ public class DPDA {
             currState = transition.nextState;
         }
         configurations.add(new Configuration(currState,
-                (i < input.size() ? Arrays.asList(input.get(i)) : new ArrayList<TerminalToken>()),
+                (i < input.size() ? Arrays.asList(input.get(i)) : new ArrayList<>()),
                 copyStack(stack), transition));
         return configurations;
     }
+
 
     public static List<TerminalToken> toTerminalTokens(char [] vals) {
         List<TerminalToken> lst = new ArrayList<>();
@@ -386,10 +386,11 @@ public class DPDA {
     }
 
     public static void printConfigs(List<Configuration> configs) {
-        /**
-         * TODO
-         */
+        for (Configuration config : configs) {
+            System.out.println(config.toString());
+        }
     }
+
 
     private boolean acceptString(List<Configuration> configs) {
         if (!configs.isEmpty() && configs.get(configs.size()-1).isAccepting()) {
@@ -401,52 +402,92 @@ public class DPDA {
 
     public static void simulateDPDA() {
         Scanner scanner = new Scanner(System.in);
+
+        // Get the number of states
         System.out.println("Enter number of states : ");
         int nStates = scanner.nextInt();
+
+        // Get the input alphabet
         System.out.println("Enter input alphabet as a comma-separated list of symbols : ");
-        String [] inpSyms = (scanner.next()).split(",");
-        for (int i=0; i < inpSyms.length; i++) {
+        String[] inpSyms = scanner.next().split(",");
+        for (int i = 0; i < inpSyms.length; i++) {
             inpSyms[i] = inpSyms[i].trim();
         }
-        boolean needed = true;
-        Integer [] accStates = new Integer[0];
+
+        // Get accepting states
         System.out.println("Enter accepting states as a comma-separated list of integers : ");
-        /**
-         * TODO:
-         * get accepting states and validate them
-         */
+        Set<Integer> acceptStates = new HashSet<>();
+        String[] accStatesStr = scanner.next().split(",");
+        for (String state : accStatesStr) {
+            acceptStates.add(Integer.parseInt(state.trim()));
+        }
+
+        // Create DPDA instance
         Set<String> terminals = new HashSet<>(Arrays.asList(inpSyms));
-        Set<Integer> acceptStates = new HashSet<>(Arrays.asList(accStates));
-        DPDA pda = new DPDA(nStates,0,terminals,new HashSet<Integer>(Arrays.asList(accStates)));
-        // enter transition rules
+        DPDA pda = new DPDA(nStates, 0, terminals, acceptStates);
+
+        // Enter transition rules
         for (int j = 0; j < nStates; j++) {
-            for ( ; ; ) {
+            for (;;) {
                 pda.printTransitionsForState(j);
                 System.out.print("Need a transition rule for state " + j + " ? (y or n)");
                 String res = scanner.next();
                 if (!res.trim().toLowerCase().startsWith("y")) {
                     break;
                 }
-                /**
-                 * TODO:
-                 * Get a transition rule input from user and and call pda.addTransition()
-                 */
+
+                // Get transition rule input from user and add it to the DPDA
+                System.out.println("Enter transition rule (comma-separated values: currentState, inputSymbol, stackTop, nextState, stackTopReplacement): ");
+                String transitionInput = scanner.next();
+                String[] parts = transitionInput.split(",");
+                if (parts.length != 5) {
+                    System.out.println("Invalid transition rule format. Please provide all required values.");
+                    continue;
+                }
+
+                try {
+                    int currentState = Integer.parseInt(parts[0].trim());
+                    String inputSymbol = parts[1].trim(); // Allow for epsilon input
+                    List<StackToken> stackTop = new ArrayList<>();
+                    String stackTopInput = parts[2].trim(); // Allow for epsilon stack top
+                    if (!stackTopInput.equals("-")) {
+                        stackTop.add(new StackToken(stackTopInput));
+                    }
+                    int nextState = Integer.parseInt(parts[3].trim());
+                    List<StackToken> stackTopReplacement = new ArrayList<>();
+                    String stackTopReplacementInput = parts[4].trim(); // Allow for epsilon stack top replacement
+                    if (!stackTopReplacementInput.equals("-")) {
+                        stackTopReplacement.add(new StackToken(stackTopReplacementInput));
+                    }
+
+                    pda.addTransition(currentState, new TerminalToken(inputSymbol), stackTop, nextState, stackTopReplacement);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid transition rule format. State numbers must be integers.");
+                } catch (InvalidStateException | InvalidSymbolException e) {
+                    System.out.println("Error: " + e.getMessage());
+                }
+
 
             }
         }
+
         pda.printTransitionsForAllStates();
-        for ( ; ; ) {
-            System.out.println("Enter an input string to be processed by the PDA : ");
+
+        // Process input strings
+        for (;;) {
+            System.out.println("Enter an input string to be processed by the PDA (enter '-' to exit): ");
             String input = scanner.next().trim();
             if (input.equals("-")) {
                 break;
             }
-            char [] chars = input.toCharArray();
+
+            char[] chars = input.toCharArray();
             List<Configuration> configurations = pda.process(toTerminalTokens(chars));
             System.out.println("Accept string " + (new String(chars)) + "?" + pda.acceptString(configurations));
             printConfigs(configurations);
         }
     }
+
     public static void main(String [] args) throws Exception {
         simulateDPDA();
     }

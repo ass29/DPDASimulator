@@ -306,11 +306,18 @@ public class DPDA {
      */
     private Transition match(int currState, TerminalToken inputSymbol,
                              Stack<StackToken> stack, boolean epsilonStack) {
-        /**
-         * TODO
-         */
+        List<Transition> possibleTransitions = transitionsArr[currState];
+
+        for (Transition transition : possibleTransitions) {
+            if (transition.inputSymbol.equals(inputSymbol) || (epsilonStack && transition.inputSymbol.equals(TerminalToken.EPSILON))) {
+                if (matchStackTop(transition.stackTop, stack) || (epsilonStack && transition.stackTop.isEmpty())) {
+                    return transition;
+                }
+            }
+        }
         return null;
     }
+
 
     // create a copy of stack
     private List<StackToken> copyStack(Stack<StackToken> stack) {

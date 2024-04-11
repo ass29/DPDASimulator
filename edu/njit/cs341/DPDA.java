@@ -16,7 +16,7 @@ import edu.njit.cs341.InvalidStateException;
  * Date created: 3/27/2024
  */
 public class DPDA {
-
+    
     private static class Transition {
         public final int currState;
         public final TerminalToken inputSymbol;
@@ -76,9 +76,7 @@ public class DPDA {
                     && matchStackTop(this.stackTopReplacement, ot.stackTopReplacement)
             );
         }
-
     }
-
     private class Configuration {
         public final int currState;
         public final List<StackToken> fromStackState;
@@ -126,18 +124,13 @@ public class DPDA {
             return builder.toString();
         }
     }
-
-
     private final Set<TerminalToken> terminalTokens = new HashSet<>();
     private final Set<StackToken> stackTokens = new HashSet<>();
     public static List<StackToken> EPSILON_STACK = new ArrayList<>();
-
-
     private final int nStates;
     private final int startState;
     private final Set<Integer> acceptStates;
     private List<Transition> [] transitionsArr = null;
-
 
     public DPDA(int nStates, int startState,
                  Set<String> terminals,
@@ -193,6 +186,21 @@ public class DPDA {
          * Check if all tokens and states in the inputs to the function are valid, otherwise
          * throw exception
          */
+
+        if (!terminalTokens.contains(inputSymbol))
+            throw new InvalidSymbolException("Invalid input symbol: " + inputSymbol);
+
+        for (StackToken token : stackTop) {
+            if (!stackTokens.contains(token))
+                throw new InvalidSymbolException("Invalid stack token: " + token);
+        }
+
+        if (currState < 0 || currState >= nStates)
+            throw new InvalidStateException("Invalid current state: " + currState);
+
+        if (nextState < 0 || nextState >= nStates)
+            throw new InvalidStateException("Invalid next state: " + nextState);
+
         Transition newTransition = new Transition(currState, inputSymbol, stackTop, nextState,
                 stackTopReplacement);
         // verify if it satisfies properties of DPDA, else throw exception
@@ -256,18 +264,33 @@ public class DPDA {
      * @param transition
      */
     private void actOnStack(Stack<StackToken> stack, Transition transition) {
-        /** TODO **/
         if (transition != null) {
             List<StackToken> stackTop = transition.stackTop;
-            /**
-             * TODO
-             */
-            // pop symbols from stack matching tokens in stackTop
-            // make sure you do not pop empty stack
-            /**
-             * TODO
-             */
-            // push symbols given in transition.stackTopReplacement onto the stack
+
+            // Pop symbols from the stack matching tokens in stackTop
+            // Make sure you do not pop an empty stack
+            if (!stack.isEmpty()) {
+                boolean stackTopMatched = true;
+                int i = stack.size() - 1; // Index of the top element in the stack
+                for (int j = stackTop.size() - 1; j >= 0; j--) {
+                    if (i < 0 || !stack.get(i).equals(stackTop.get(j))) {
+                        stackTopMatched = false;
+                        break;
+                    }
+                    i--;
+                }
+
+                if (stackTopMatched) {
+                    // Pop symbols from the stack
+                    for (int k = 0; k < stackTop.size(); k++) {
+                        stack.pop();
+                    }
+                }
+            }
+            // Push symbols given in transition.stackTopReplacement onto the stack
+            for (int l = transition.stackTopReplacement.size() - 1; l >= 0; l--) {
+                stack.push(transition.stackTopReplacement.get(l));
+            }
         }
     }
 
@@ -416,9 +439,7 @@ public class DPDA {
             System.out.println("Accept string " + (new String(chars)) + "?" + pda.acceptString(configurations));
             printConfigs(configurations);
         }
-
     }
-
     public static void main(String [] args) throws Exception {
         simulateDPDA();
     }
